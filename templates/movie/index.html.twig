@@ -1,0 +1,225 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Movie World{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col">
+                <h1 class="mb-0">Movie World</h1>
+            </div>
+            {% if user is not empty %}
+            <div class="col text-right">
+                <div>Welcome Back <span class="text-primary">{{ user.username }}</span></div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="row">
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                {% if movies_count is not empty %}
+                    Found {{ movies_count }} movies
+                {% endif %}
+                </div>
+                {% if movies is empty %}
+                    <p class="text-center">There are no movies yet.</p>
+                {% else %}
+                    <div class="list-group">
+                    {% for movie in movies %}
+                        <div class="list-group-item list-group-item-action" {% if user is not empty %} data-user-id="{{ user.id }}"{% endif %} data-movie-id="{{ movie.id }}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ movie.title }}</h5>
+                                <small>Posted: {{ movie.dateAdded|date('Y-m-d H:i:s') }}</small>
+                            </div>
+                            <p class="mb-1">{{ movie.description }}</p>
+                            <div class="d-flex justify-content-between">
+                                <div class="text-muted">
+                                    <span {% if user is not empty and movie.user.username != user.username and movie.id in like_ids %} class="text-success" {% endif %}> {{ movie.likes }} <strong> likes </strong></span> | <span {% if user is not empty and movie.user.username != user.username and movie.id in hate_ids %} class="text-danger" {% endif %}> {{ movie.dislikes }} <strong> hates </strong></span>
+                                </div>
+                                {% if user is not empty %}
+                                    {% if movie.user.username != user.username %}
+                                    <div>
+                                        <div class="btn-group-toggle like-hate-buttons" data-toggle="buttons">
+                                            <label class="btn btn-outline-success {% if movie.id in like_ids %} active {% endif %}" id="likeLabel" >
+                                                <input type="radio" name="options" id="likeRadio" autocomplete="off" data-type="like" {% if movie.id in like_ids %} checked {% endif %}> Like
+                                            </label>
+                                            <label class="btn btn-outline-danger {% if movie.id in hate_ids %} active {% endif %}" id="hateLabel">
+                                                <input type="radio" name="options" id="hateRadio" autocomplete="off" data-type="hate" {% if movie.id in hate_ids %} checked {% endif %}> Hate
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                <div>
+                                    {% if user is not empty %}
+                                        <small><strong>Posted By:</strong> {{ movie.user.username == user.username ? 'You' : movie.user.username }}</small>
+                                    {% else %}
+                                        <small><strong>Posted By:</strong> {{ movie.user.username }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-3 text-right">
+                {% if user is empty %}
+                    <a href="{{ path('app_login') }}" class="btn btn-secondary">Log in</a> or <a href="{{ path('app_register') }}" class="btn btn-primary">Sign up</a>
+                {% else %}
+                    <a href="{{ path('movie_add') }}" class="btn btn-success">New Movie</a>
+                {% endif %}
+                <div class="card mt-5 text-center" style="background-color: #f8f9fa;">
+                    <div class="card-header  bg-secondary text-white">
+                        Sort By:
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="form-check d-flex justify-content-between align-items-center">
+                                <label class="form-check-label text-primary" for="dateSortRadio">
+                                    Dates
+                                </label>
+                                <input class="form-check-input" type="radio" name="sorting" id="dateSortRadio" value="option1" {% if app.request.attributes.get('_route') == 'app_movies' %}checked{% endif %}>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="form-check d-flex justify-content-between align-items-center">
+                                <label class="form-check-label text-primary" for="likeSortRadio">
+                                    Likes
+                                </label>
+                                <input class="form-check-input" type="radio" name="sorting" id="likeSortRadio" value="option2" {% if app.request.attributes.get('_route') == 'app_movies_like_sort' %}checked{% endif %}>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="form-check d-flex justify-content-between align-items-center">
+                                <label class="form-check-label text-primary" for="dislikeSortRadio">
+                                    Hates
+                                </label>
+                                <input class="form-check-input" type="radio" name="sorting" id="dislikeSortRadio" value="option3" {% if app.request.attributes.get('_route') == 'app_movies_dislike_sort' %}checked{% endif %}>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const dateSortRadio = document.getElementById('dateSortRadio');
+        dateSortRadio.addEventListener('change', function() {
+            if (this.checked) {
+                window.location.href = '{{ path('app_movies') }}';
+            }
+        });
+
+        const likeSortRadio = document.getElementById('likeSortRadio');
+        likeSortRadio.addEventListener('change', function() {
+            if (this.checked) {
+                window.location.href = '{{ path('app_movies_like_sort') }}';
+            }
+        });
+
+        const dislikeSortRadio = document.getElementById('dislikeSortRadio');
+        dislikeSortRadio.addEventListener('change', function() {
+            if (this.checked) {
+                window.location.href = '{{ path('app_movies_dislike_sort') }}';
+            }
+        });
+
+        // Get all sets of like and hate radio buttons
+        const likeHateButtonSets = document.querySelectorAll('.like-hate-buttons');
+
+        // Loop through each set
+        likeHateButtonSets.forEach(set => {
+            // Get the radio buttons within the set
+            const likeRadio = set.querySelector('input[data-type="like"]');
+            const hateRadio = set.querySelector('input[data-type="hate"]');
+            const userId = set.closest('.list-group-item').dataset.userId;
+            const movieId = set.closest('.list-group-item').dataset.movieId;
+
+            // Add event listener to likeRadio
+            likeRadio.addEventListener('click', function() {
+                if (!this.checked) {
+                    // If likeRadio is not checked, do nothing
+                    return;
+                }
+
+                // Uncheck hateRadio if it is checked
+                if (this.checked && !this.parentElement.classList.contains('active')) {
+                    hateRadio.checked = false;
+                    hateRadio.parentElement.classList.remove('active');
+                    hateRadio.parentElement.classList.remove('btn-danger');
+                    hateRadio.parentElement.classList.add('btn-outline-danger');
+                    likeRadio.checked = true;
+                    likeRadio.parentElement.classList.add('active');
+                    likeRadio.parentElement.classList.remove('btn-outline-success');
+                    likeRadio.parentElement.classList.add('btn-success');
+                    vote(userId, movieId, 'like');
+                }
+                else {
+                    likeRadio.checked = false;
+                    likeRadio.parentElement.classList.remove('active');
+                    likeRadio.parentElement.classList.remove('btn-success');
+                    likeRadio.parentElement.classList.add('btn-outline-success');
+                    vote(userId, movieId, "");
+                }
+            });
+
+            // Add event listener to hateRadio
+            hateRadio.addEventListener('click', function() {
+                if (!this.checked) {
+                    // If hateRadio is not checked, do nothing
+                    return;
+                }
+
+                // Uncheck likeRadio if it is checked
+                if (this.checked && !this.parentElement.classList.contains('active')) {
+                    likeRadio.checked = false;
+                    likeRadio.parentElement.classList.remove('active');
+                    likeRadio.parentElement.classList.remove('btn-success');
+                    likeRadio.parentElement.classList.add('btn-outline-success');
+                    hateRadio.checked = true;
+                    hateRadio.parentElement.classList.add('active');
+                    hateRadio.parentElement.classList.remove('btn-danger');
+                    hateRadio.parentElement.classList.add('btn-outline-danger');
+                    vote(userId, movieId, 'hate');
+                }
+                else {
+                    hateRadio.checked = false;
+                    hateRadio.parentElement.classList.remove('active');
+                    hateRadio.parentElement.classList.remove('btn-danger');
+                    hateRadio.parentElement.classList.add('btn-outline-danger');
+                    vote(userId, movieId, "");
+                }
+                
+            });
+        });
+
+        function vote(userId, movieId, type) {
+            const data = {
+                user_id: userId,
+                movie_id: movieId,
+                vote: type
+            };
+
+            // Make AJAX request
+            fetch('{{ path('app_vote') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Handle response here, if needed
+                location.reload();
+            })
+            .catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+            });
+        }
+    </script>
+{% endblock %}
+

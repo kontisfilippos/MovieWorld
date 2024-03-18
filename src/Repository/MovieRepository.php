@@ -3,16 +3,17 @@
 namespace App\Repository;
 
 use App\Entity\Movie;
+use App\Entity\Vote;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Movie>
  *
- * @method Movie|null find($id, $lockMode = null, $lockVersion = null)
- * @method Movie|null findOneBy(array $criteria, array $orderBy = null)
- * @method Movie[]    findAll()
- * @method Movie[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method [] getMoviesWithVoteCounts()
+ * @method [] findByLikesByUser($userId)
+ * @method [] findByHatesByUser($userId)
+ * @method Movie[]|null findOneByMovieId($movie_id)
  */
 class MovieRepository extends ServiceEntityRepository
 {
@@ -21,28 +22,56 @@ class MovieRepository extends ServiceEntityRepository
         parent::__construct($registry, Movie::class);
     }
 
-//    /**
-//     * @return Movie[] Returns an array of Movie objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('m.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function getMoviesWithVoteCounts(): array
+    {
+        return $this->createQueryBuilder('m')
+            ->select('m.id', 'm.title', 'm.description', 'm.date_added', 
+                'COUNT(DISTINCT CASE WHEN v.vote = :like THEN v.id ELSE 0 END) AS likes', 
+                'COUNT(DISTINCT CASE WHEN v.vote = :dislike THEN v.id ELSE 0 END) AS dislikes'
+            )
+            ->leftJoin('App\Entity\Vote', 'v', 'WITH', 'v.movie_id = m.id')
+            ->setParameter('like', 'like')
+            ->setParameter('dislike', 'dislike')
+            ->groupBy('m.id')
+            ->getQuery()
+            ->getResult();
+    }
 
-//    public function findOneBySomeField($value): ?Movie
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findByLikesByUser($userId): array
+    {   
+        $like = "like";
+        return $this->createQueryBuilder('m')
+            ->select('m')
+            ->leftJoin('App\Entity\Vote', 'v', 'WITH', 'v.movie_id = m.id')
+            ->andWhere('v.user_id = :user_id')
+            ->andWhere('v.vote = :like')
+            ->setParameter('user_id', $userId)
+            ->setParameter('like', $like)
+            ->getQuery()
+            ->getResult();
+    }
+
+   public function findByHatesByUser($userId): array
+   {    
+        $hate = "hate";
+        return $this->createQueryBuilder('m')
+            ->select('m')
+            ->leftJoin('App\Entity\Vote', 'v', 'WITH', 'v.movie_id = m.id')
+            ->andWhere('v.user_id = :user_id')
+            ->andWhere('v.vote = :like')
+            ->setParameter('user_id', $userId)
+            ->setParameter('like', $hate)
+            ->getQuery()
+            ->getResult();
+   }
+
+   public function findOneByMovieId($movie_id): ?Movie
+   {
+       return $this->createQueryBuilder('m')
+           ->andWhere('m.id = :val')
+           ->setParameter('val', $movie_id)
+           ->getQuery()
+           ->getOneOrNullResult()
+       ;
+   }
 }

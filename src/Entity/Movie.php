@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Entity;
+use DateTimeImmutable;
 
 use App\Repository\MovieRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Movie
 {
     #[ORM\Id]
@@ -20,17 +22,17 @@ class Movie
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    #[ORM\ManyToOne]
-    private ?User $user_id = null;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    private ?User $user = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $date_added = null;
 
     #[ORM\Column(nullable: true)]
-    private ?int $likes = null;
+    private ?int $likes = 0;
 
     #[ORM\Column(nullable: true)]
-    private ?int $dislikes = null;
+    private ?int $dislikes = 0;
 
     public function getId(): ?int
     {
@@ -61,15 +63,14 @@ class Movie
         return $this;
     }
 
-    public function getUserId(): ?User
+    public function getUser(): ?User
     {
-        return $this->user_id;
+        return $this->user;
     }
 
-    public function setUserId(?User $user_id): static
+    public function setUser(?User $user): self
     {
-        $this->user_id = $user_id;
-
+        $this->user = $user;
         return $this;
     }
 
@@ -78,9 +79,10 @@ class Movie
         return $this->date_added;
     }
 
-    public function setDateAdded(\DateTimeImmutable $date_added): static
+    #[ORM\PrePersist]
+    public function setDateAdded(): self
     {
-        $this->date_added = $date_added;
+        $this->date_added = new DateTimeImmutable('now');
 
         return $this;
     }

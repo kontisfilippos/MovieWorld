@@ -19,6 +19,26 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-
+security:
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                # "app_login" is the name of the route created previously
+                login_path: app_login
+                check_path: app_login
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: username
+    password_hashers:
+        # Use native password hasher, which auto-selects and migrates the best
+        # possible hashing algorithm (which currently is "bcrypt")
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

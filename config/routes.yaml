@@ -3,3 +3,34 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+login:
+    path: /login
+    controller: App\Controller\SecurityController::login
+
+register:
+    path: /register
+    controller: App\Controller\SecurityController::register
+
+logout:
+    path: /logout
+    controller: App\Controller\SecurityController::logout
+
+movie_add:
+    path: /movie/add
+    controller: App\Controller\MovieController::addMovie
+
+app_movies:
+    path: /movies
+    controller: App\Controller\MovieController::getMovies
+
+app_movies_like_sort:
+    path: /movies/like_sort
+    controller: App\Controller\MovieController::getMoviesSortedByLikes
+
+app_movies_dislike_sort:
+    path: /movies/dislike_sort
+    controller: App\Controller\MovieController::getMoviesSortedByDislikes
+
+app_vote:
+    path: /vote
+    controller: App\Controller\VoteController::addVote
